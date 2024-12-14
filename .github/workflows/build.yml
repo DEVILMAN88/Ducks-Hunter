@@ -1,0 +1,104 @@
+# Workflow para construir y lanzar la aplicación PyCalc6 para Windows cuando se hace push a la rama main
+
+name: Build and Release PyCalc6 (Windows)
+
+on:
+  push:
+    branches: ["main"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest  # Cambiamos el entorno a Windows
+
+    steps:
+      # 1. Clonar el repositorio
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      # 2. Configurar Python 3.11 en Windows
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # 3. Instalar Poetry en Windows
+      - name: Install Poetry
+        run: |
+          (Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | python -
+
+      # 3.5. Agregar el directorio de Poetry al PATH
+      - name: Add Poetry to PATH
+        run: |
+           echo "C:\\Users\\runneradmin\\AppData\\Roaming\\Python\\Scripts" >> $env:GITHUB_PATH
+
+      # 4. Deshabilitar entornos virtuales de Poetry
+      - name: Disable Poetry virtual environments
+        run: |
+          poetry config virtualenvs.create false
+
+      # 5. Instalar dependencias usando Poetry
+      - name: Install dependencies using Poetry
+        run: |
+          poetry install
+
+      # 5.5. Mostrar información del entorno de Poetry
+      - name: Show Poetry information
+        run: |
+          poetry env info
+          
+      # 6. Linting con ruff
+      - name: Lint with ruff
+        run: |
+          poe check || exit 1
+      
+      # 7. Generar archivos de UI
+      - name: Generate UI files
+        run: |
+          poe updateall
+
+      # 8. Correr pruebas con pytest
+      - name: Test with pytest
+        run: |
+          poe runtest || exit 1
+
+      # 9. Construir la aplicación con PyInstaller para Windows
+      - name: Build the application
+        run: |
+          poe build_all
+          if (Test-Path dist) {
+            Compress-Archive -Path dist/* -DestinationPath calculadora_release.zip
+          } else {
+            Write-Error "Error: carpeta 'dist/' no encontrada."
+            exit 1
+          }
+
+      # 10. Subir el artefacto comprimido (calculadora_release.zip)
+      - name: Archive build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: CalculadoraAppZip
+          path: calculadora_release.zip
+
+  release:
+    needs: build
+    runs-on: windows-latest
+    steps:
+      # 1. Descargar el artefacto
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: CalculadoraAppZip
+
+      # 2. Crear un release en GitHub
+      - name: Create a release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: "release-${{ github.sha }}"
+          name: Release ${{ github.run_number }}
+          body: |
+            Nueva versión de la calculadora:
+            ${{ github.event.head_commit.message }}
+          artifacts: "calculadora_release.zip"
