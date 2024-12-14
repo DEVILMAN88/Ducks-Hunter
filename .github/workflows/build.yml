@@ -48,26 +48,11 @@ jobs:
       - name: Show Poetry information
         run: |
           poetry env info
-          
-      # 6. Linting con ruff
-      - name: Lint with ruff
-        run: |
-          poe check || exit 1
-      
-      # 7. Generar archivos de UI
-      - name: Generate UI files
-        run: |
-          poe updateall
-
-      # 8. Correr pruebas con pytest
-      - name: Test with pytest
-        run: |
-          poe runtest || exit 1
 
       # 9. Construir la aplicación con PyInstaller para Windows
       - name: Build the application
         run: |
-          poe build_all
+          poe build
           if (Test-Path dist) {
             Compress-Archive -Path dist/* -DestinationPath calculadora_release.zip
           } else {

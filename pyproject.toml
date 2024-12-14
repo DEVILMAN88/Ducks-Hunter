@@ -11,6 +11,7 @@ package-mode = false
 python = ">=3.9,<3.13"
 pyinstaller = "^6.10.0"
 pygame = "2.5.2"
+
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.6.5"
 poethepoet = "^0.28.0"
@@ -22,15 +23,5 @@ build-backend = "poetry.core.masonry.api"
 
 
 [tool.poe.tasks]
-updateview = "pyside6-uic -o ./src/main/ui/gen/ui_calculadora_view.py ./assets/ui_calculadora_view.ui"
-updatercc = "pyside6-rcc -o ./src/main/icons_rc.py ./assets/icons.qrc"
-updateall = ["updateview", "updatercc"]
-format = "ruff format"
-check = "ruff check"
-runtest = "pytest ./src/test"
-runapp = "python ./src/main/main.py"
-build = "pyinstaller --clean --noconsole --name=PyCalc6 ./src/main/main.py "
-add_assets = "python utilassets.py"
-build_all = ["build", "add_assets"]
-run_and_update = ["updateall", "runapp"]
+build = "pyinstaller --clean --noconsole --name=DuckHunt main2.py "
 
